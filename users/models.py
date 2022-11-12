@@ -41,6 +41,7 @@ class User(AbstractBaseUser):
         max_length=255,
         unique=True,
     )
+    follow = models.ManyToManyField('self', symmetrical=False, related_name='follower')
     is_active = models.BooleanField(default=True)
     is_admin = models.BooleanField(default=False)
 
