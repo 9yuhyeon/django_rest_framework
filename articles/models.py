@@ -9,6 +9,7 @@ class Article(models.Model):
     image = models.ImageField(blank=True, upload_to='%Y/%m/') # upload to는 media의 하위 저장 경로를 설정
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    like = models.ManyToManyField(User, related_name='like_articles')
 
     def __str__(self):
         return str(self.title)
