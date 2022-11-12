@@ -2,8 +2,8 @@ from rest_framework.views import APIView
 from rest_framework import status, permissions
 from rest_framework.response import Response
 from rest_framework.generics import get_object_or_404
-from articles.models import Article
-from .serializers import ArticleSerializer,ArticleListSerializer, ArticleCreateSerializer
+from articles.models import Article, Comment
+from .serializers import ArticleSerializer,ArticleListSerializer, ArticleCreateSerializer, CommentSerializer, CommentCreateSerializer
 
 # Create your views here.
 class ArticleView(APIView):
@@ -52,23 +52,46 @@ class ArticleDetailView(APIView):
 
 class CommentView(APIView):
     # 댓글 보기 API
-    def get(self, request):
-        pass
-    
+    def get(self, request, article_id):
+        article = get_object_or_404(Article, id=article_id)
+        comment = article.comment_set.all()
+        serializer = CommentSerializer(comment, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     # 댓글 작성 API
-    def post(self, request):
-        pass
+    def post(self, request, article_id):
+        serializer = CommentCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user, article_id=article_id)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class CommentDetailView(APIView):
     # 댓글 수정 API
-    def put(self, request, comment_id):
-        pass
+    def put(self, request, article_id, comment_id):
+        comment = get_object_or_404(Comment, id=comment_id)
+        if comment.user == request.user:
+            serializer = CommentCreateSerializer(comment, data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"msg":"권한이 없습니다!"}, status=status.HTTP_403_FORBIDDEN)
     
     # 댓글 삭제 API
-    def delete(self, request, comment_id):
-        pass
+    def delete(self, request, article_id, comment_id):
+        comment = get_object_or_404(Comment, id=comment_id)
+        if comment.user == request.user:
+            comment.delete()
+            return Response({"msg":"삭제완료!"}, status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response({"msg":"권한이 없습니다!"}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class LikeView(APIView):
     # 좋아요 API
-    def post(self, request):
+    def post(self, request, article_id):
         pass
