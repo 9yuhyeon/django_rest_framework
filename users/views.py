@@ -2,10 +2,16 @@ from rest_framework import status
 from rest_framework.generics import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from users.serializers import UserSerializer, CustomTokenObtainPairSerializer
+from users.serializers import UserSerializer, CustomTokenObtainPairSerializer, UserProfileSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import User
 # Create your views here.
+
+class UserProfileView(APIView):
+    def get(self, request, user_id):
+        user = get_object_or_404(User, id=user_id)
+        serializer = UserProfileSerializer(user)
+        return Response(serializer.data)
 
 class UserView(APIView):
     def post(self, request):
