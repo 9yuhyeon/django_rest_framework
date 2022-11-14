@@ -3,6 +3,7 @@ from rest_framework import status, permissions
 from rest_framework.response import Response
 from rest_framework.generics import get_object_or_404
 from articles.models import Article, Comment
+from django.db.models.query_utils import Q
 from .serializers import ArticleSerializer,ArticleListSerializer, ArticleCreateSerializer, CommentSerializer, CommentCreateSerializer
 
 # Create your views here.
@@ -15,6 +16,9 @@ class ArticleView(APIView):
     
     # 게시글 작성 API
     def post(self, request):
+        if not request.user.is_authenticated:
+            return Response({"msg":"로그인을 해주세요!"}, status=status.HTTP_401_UNAUTHORIZED)
+
         serializer = ArticleCreateSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(user=request.user)
@@ -101,3 +105,14 @@ class LikeView(APIView):
         else:
             article.like.add(request.user)
             return Response({"msg":"좋아요!"}, status=status.HTTP_200_OK)
+
+
+class FeedView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def get(self, request):
+        q = Q()
+        for user in request.user.follow.all():
+            q.add(Q(user=user),q.OR)
+            feeds = Article.objects.filter(q)
+            serializer = ArticleListSerializer(feeds, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
